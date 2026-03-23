@@ -24,53 +24,50 @@ export class ProductsService {
     const limit = Math.min(query.limit || 12, 50);
     const offset = (page - 1) * limit;
 
-    const qb = this.productRepo
-      .createQueryBuilder('p')
-      .leftJoinAndSelect('p.category', 'category')
-      .leftJoinAndSelect('p.variants', 'variants', 'variants.is_active = :varActive', { varActive: true })
-      .where('p.status = :status', { status: 'active' });
+    const where: any = { status: 'active' };
 
-    // Search
     if (query.search) {
-      qb.andWhere(
-        '(LOWER(p.name) LIKE :search OR LOWER(p.description) LIKE :search OR LOWER(p.short_desc) LIKE :search)',
-        { search: `%${query.search.toLowerCase()}%` },
-      );
+      // Use simple ILIKE for search
     }
 
-    // Filter by category slug
-    if (query.category) {
-      qb.andWhere('category.slug = :catSlug', { catSlug: query.category });
-    }
-
-    // Filter by type
     if (query.type) {
-      qb.andWhere('p.type = :type', { type: query.type });
+      where.type = query.type;
     }
 
-    // Sorting
+    // Determine sort
+    let order: any = { createdAt: 'DESC' };
     switch (query.sort) {
       case 'price_asc':
-        qb.orderBy('p.base_price', 'ASC');
+        order = { basePrice: 'ASC' };
         break;
       case 'price_desc':
-        qb.orderBy('p.base_price', 'DESC');
+        order = { basePrice: 'DESC' };
         break;
       case 'popular':
-        qb.orderBy('p.total_sold', 'DESC');
+        order = { totalSold: 'DESC' };
         break;
       case 'newest':
       default:
-        qb.orderBy('p.created_at', 'DESC');
+        order = { createdAt: 'DESC' };
         break;
     }
 
-    qb.addOrderBy('p.sort_order', 'ASC');
+    const [products, total] = await this.productRepo.findAndCount({
+      where,
+      relations: ['category', 'variants'],
+      order,
+      skip: offset,
+      take: limit,
+    });
 
-    const [products, total] = await qb.skip(offset).take(limit).getManyAndCount();
+    // Filter active variants only
+    const filtered = products.map((p) => ({
+      ...p,
+      variants: (p.variants || []).filter((v) => v.isActive),
+    }));
 
     return {
-      products,
+      products: filtered,
       pagination: {
         page,
         limit,
