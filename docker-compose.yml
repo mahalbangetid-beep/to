@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # ─── Database ────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: tokdig-postgres
+    environment:
+      POSTGRES_DB: tokdig
+      POSTGRES_USER: tokdig
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-tokdig_dev_2026}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tokdig"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Cache ───────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: tokdig-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Backend API ─────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tokdig-backend
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=tokdig
+      - DB_USER=tokdig
+      - DB_PASSWORD=${DB_PASSWORD:-tokdig_dev_2026}
+      - JWT_SECRET=${JWT_SECRET:-tokdig_jwt_secret_change_me}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - MIDTRANS_SERVER_KEY=${MIDTRANS_SERVER_KEY:-}
+      - MIDTRANS_CLIENT_KEY=${MIDTRANS_CLIENT_KEY:-}
+      - MIDTRANS_IS_PRODUCTION=${MIDTRANS_IS_PRODUCTION:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─── Frontend ────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: tokdig-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=${API_URL:-http://localhost:3001/api}
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
