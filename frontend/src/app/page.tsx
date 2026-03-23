@@ -41,14 +41,18 @@ function formatPrice(price: number): string {
 
 // ─── SERVER SIDE DATA FETCHING ──────
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+export const dynamic = 'force-dynamic';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 async function getCategories() {
   try {
     const res = await fetch(`${API_URL}/categories`, { next: { revalidate: 300 } });
     if (!res.ok) return fallbackCategories;
-    const data = await res.json();
-    return data?.categories || data || fallbackCategories;
+    const json = await res.json();
+    const inner = json?.data || json;
+    const cats = inner?.categories || inner;
+    return Array.isArray(cats) ? cats : fallbackCategories;
   } catch {
     return fallbackCategories;
   }
@@ -58,8 +62,10 @@ async function getFeaturedProducts() {
   try {
     const res = await fetch(`${API_URL}/products/featured?limit=5`, { next: { revalidate: 300 } });
     if (!res.ok) return [];
-    const data = await res.json();
-    return data || [];
+    const json = await res.json();
+    const inner = json?.data || json;
+    const products = inner?.products || inner;
+    return Array.isArray(products) ? products : [];
   } catch {
     return [];
   }
