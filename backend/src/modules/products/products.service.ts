@@ -110,32 +110,23 @@ export class ProductsService {
     const limit = Math.min(query.limit || 20, 100);
     const offset = (page - 1) * limit;
 
-    const qb = this.productRepo
-      .createQueryBuilder('p')
-      .leftJoinAndSelect('p.category', 'category')
-      .leftJoinAndSelect('p.variants', 'variants');
-
-    if (query.search) {
-      qb.andWhere('(LOWER(p.name) LIKE :search)', {
-        search: `%${query.search.toLowerCase()}%`,
-      });
-    }
+    const where: any = {};
 
     if (query.status) {
-      qb.andWhere('p.status = :status', { status: query.status });
+      where.status = query.status;
     }
 
     if (query.type) {
-      qb.andWhere('p.type = :type', { type: query.type });
+      where.type = query.type;
     }
 
-    if (query.category) {
-      qb.andWhere('category.slug = :catSlug', { catSlug: query.category });
-    }
-
-    qb.orderBy('p.created_at', 'DESC');
-
-    const [products, total] = await qb.skip(offset).take(limit).getManyAndCount();
+    const [products, total] = await this.productRepo.findAndCount({
+      where,
+      relations: ['category', 'variants'],
+      order: { createdAt: 'DESC' },
+      skip: offset,
+      take: limit,
+    });
 
     return {
       products,
