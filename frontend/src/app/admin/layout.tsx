@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
+import { useEffect } from 'react';
 
 const adminNav = [
   { href: '/admin', icon: '📊', label: 'Dashboard' },
@@ -20,6 +22,36 @@ const adminNav = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <span className="spinner" /> Memuat...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  if (user.role !== 'admin') {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', flexDirection: 'column', gap: '16px' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 700 }}>⛔ Akses Ditolak</h1>
+        <p style={{ color: 'var(--color-text-muted)' }}>Halaman ini hanya untuk admin.</p>
+        <Link href="/dashboard" className="btn btn-primary">Kembali ke Dashboard</Link>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -68,3 +100,4 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     </div>
   );
 }
+
