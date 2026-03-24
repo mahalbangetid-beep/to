@@ -13,7 +13,7 @@ import { existsSync, mkdirSync } from 'fs';
 import { v4 as uuid } from 'uuid';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 const uploadDir = join(process.cwd(), 'uploads');
 
@@ -30,10 +30,18 @@ export class UploadsController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: (_req, _file, cb) => {
+        destination: (
+          _req: any,
+          _file: any,
+          cb: (error: Error | null, destination: string) => void,
+        ) => {
           cb(null, uploadDir);
         },
-        filename: (_req, file, cb) => {
+        filename: (
+          _req: any,
+          file: any,
+          cb: (error: Error | null, filename: string) => void,
+        ) => {
           const uniqueName = `${uuid()}${extname(file.originalname)}`;
           cb(null, uniqueName);
         },
@@ -41,11 +49,15 @@ export class UploadsController {
       limits: {
         fileSize: 5 * 1024 * 1024, // 5MB max
       },
-      fileFilter: (_req, file, cb) => {
+      fileFilter: (
+        _req: any,
+        file: any,
+        cb: (error: Error | null, acceptFile: boolean) => void,
+      ) => {
         const allowedTypes = /\.(jpg|jpeg|png|gif|webp|svg)$/i;
         if (!allowedTypes.test(extname(file.originalname))) {
           return cb(
-            new BadRequestException('Hanya file gambar yang diperbolehkan (jpg, png, gif, webp, svg)'),
+            new BadRequestException('Hanya file gambar yang diperbolehkan'),
             false,
           );
         }
@@ -53,7 +65,7 @@ export class UploadsController {
       },
     }),
   )
-  uploadImage(@UploadedFile() file: Express.Multer.File) {
+  uploadImage(@UploadedFile() file: any) {
     if (!file) {
       throw new BadRequestException('File tidak ditemukan');
     }
@@ -65,3 +77,4 @@ export class UploadsController {
     };
   }
 }
+
