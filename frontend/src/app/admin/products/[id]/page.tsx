@@ -60,7 +60,7 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
         setCategoryId(p.categoryId || '');
         setType(p.type || 'ai_premium');
         setBasePrice(p.basePrice || 0);
-        setShortDesc(p.shortDescription || '');
+        setShortDesc(p.shortDesc || '');
         setDescription(p.description || '');
         setFulfillmentType(p.fulfillmentType || 'semi_auto');
         setStatus(p.status || 'active');
@@ -89,7 +89,7 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
         categoryId: categoryId || undefined,
         type,
         basePrice,
-        shortDescription: shortDesc || undefined,
+        shortDesc: shortDesc || undefined,
         description: description || undefined,
         fulfillmentType,
         status,

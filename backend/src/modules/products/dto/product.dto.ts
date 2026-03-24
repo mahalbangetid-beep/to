@@ -111,10 +111,12 @@ export class CreateProductDto {
 
   @IsOptional()
   @IsArray()
+  @IsString({ each: true })
   badges?: string[];
 
   @IsOptional()
   @IsArray()
+  @IsString({ each: true })
   images?: string[];
 
   @IsOptional()
@@ -219,10 +221,12 @@ export class UpdateProductDto {
 
   @IsOptional()
   @IsArray()
+  @IsString({ each: true })
   badges?: string[];
 
   @IsOptional()
   @IsArray()
+  @IsString({ each: true })
   images?: string[];
 
   @IsOptional()
