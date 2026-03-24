@@ -2,7 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { APP_GUARD } from '@nestjs/core';
+import { join } from 'path';
 import { getDatabaseConfig } from './config/database.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { ProductsModule } from './modules/products/products.module';
@@ -20,6 +22,7 @@ import { ClaimsModule } from './modules/claims/claims.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { WishlistModule } from './modules/wishlist/wishlist.module';
 import { EmailModule } from './modules/email/email.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 
 @Module({
   imports: [
@@ -34,6 +37,13 @@ import { EmailModule } from './modules/email/email.module';
       ttl: 60000,
       limit: 60,
     }]),
+
+    // Serve uploaded files at /api/uploads/
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'uploads'),
+      serveRoot: '/api/uploads',
+      serveStaticOptions: { index: false },
+    }),
 
     // Database (TypeORM + PostgreSQL)
     TypeOrmModule.forRootAsync({
@@ -59,6 +69,7 @@ import { EmailModule } from './modules/email/email.module';
     AuditModule,
     WishlistModule,
     EmailModule,
+    UploadsModule,
   ],
   controllers: [],
   providers: [

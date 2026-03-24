@@ -48,6 +48,8 @@ export default function AdminNewProductPage() {
   const [slaText, setSlaText] = useState('');
   const [rules, setRules] = useState('');
   const [warrantyInfo, setWarrantyInfo] = useState('');
+  const [images, setImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   // Variants
   const [variants, setVariants] = useState<Variant[]>([
@@ -56,6 +58,46 @@ export default function AdminNewProductPage() {
 
   // Fields
   const [fields, setFields] = useState<Field[]>([]);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files?.length) return;
+
+    setUploading(true);
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const formData = new FormData();
+        formData.append('file', files[i]);
+
+        const token = localStorage.getItem('token');
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/uploads/image`,
+          {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+          },
+        );
+
+        if (res.ok) {
+          const json = await res.json();
+          const url = json?.data?.url || json?.url;
+          if (url) {
+            setImages((prev) => [...prev, url]);
+          }
+        }
+      }
+    } catch {
+      setError('Gagal upload gambar');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const removeImage = (idx: number) => {
+    setImages(images.filter((_, i) => i !== idx));
+  };
 
   useEffect(() => {
     api.get<any>('/admin/categories').then((res) => {
@@ -118,6 +160,7 @@ export default function AdminNewProductPage() {
         slaText: slaText || undefined,
         rules: rules || undefined,
         warrantyInfo: warrantyInfo || undefined,
+        images,
         variants: variants.filter((v) => v.name && v.price > 0),
         fields: fields.filter((f) => f.fieldName && f.fieldLabel),
       });
@@ -210,6 +253,52 @@ export default function AdminNewProductPage() {
             </label>
           </div>
         </div>
+      </div>
+
+      {/* ─── Images ─── */}
+      <div className="card" style={{ marginBottom: '20px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>🖼️ Gambar Produk</h3>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '12px' }}>
+          {images.map((url, i) => (
+            <div key={i} style={{ position: 'relative', width: '120px', height: '120px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+              <img
+                src={url.startsWith('http') ? url : `https://tokdig.com${url}`}
+                alt={`Product ${i + 1}`}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+              <button
+                onClick={() => removeImage(i)}
+                style={{
+                  position: 'absolute', top: '4px', right: '4px',
+                  background: 'rgba(239,68,68,0.9)', color: '#fff',
+                  border: 'none', borderRadius: '50%', width: '24px', height: '24px',
+                  cursor: 'pointer', fontSize: '12px', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          <label style={{
+            width: '120px', height: '120px', borderRadius: '8px',
+            border: '2px dashed var(--color-border)', display: 'flex',
+            flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            cursor: uploading ? 'wait' : 'pointer', gap: '4px',
+            color: 'var(--color-text-muted)', fontSize: '13px',
+          }}>
+            {uploading ? <><span className="spinner" /> Uploading...</> : <><span style={{ fontSize: '24px' }}>+</span> Upload</>}
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageUpload}
+              style={{ display: 'none' }}
+              disabled={uploading}
+            />
+          </label>
+        </div>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '12px' }}>Maks 5MB per file. Format: JPG, PNG, WebP, GIF</p>
       </div>
 
       {/* ─── Variants ─── */}
