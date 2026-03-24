@@ -42,6 +42,8 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
   const [slaText, setSlaText] = useState('');
   const [rules, setRules] = useState('');
   const [warrantyInfo, setWarrantyInfo] = useState('');
+  const [images, setImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [variants, setVariants] = useState<Variant[]>([]);
 
   useEffect(() => {
@@ -66,6 +68,7 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
         setSlaText(p.slaText || '');
         setRules(p.rules || '');
         setWarrantyInfo(p.warrantyInfo || '');
+        setImages(p.images || []);
         setVariants(p.variants || []);
       } catch (err: any) {
         setError(err?.message || 'Gagal memuat produk');
@@ -94,6 +97,7 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
         slaText: slaText || undefined,
         rules: rules || undefined,
         warrantyInfo: warrantyInfo || undefined,
+        images,
         variants: variants.length > 0 ? variants : undefined,
       });
       router.push('/admin/products');
@@ -211,6 +215,73 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Images */}
+          <div className="card" style={{ marginBottom: '20px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '16px' }}>🖼️ Gambar Produk</h3>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '12px' }}>
+              {images.map((url, i) => (
+                <div key={i} style={{ position: 'relative', width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                  <img
+                    src={url.startsWith('http') ? url : `https://tokdig.com${url}`}
+                    alt={`Product ${i + 1}`}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  <button
+                    onClick={() => setImages(images.filter((_, idx) => idx !== i))}
+                    style={{
+                      position: 'absolute', top: '2px', right: '2px',
+                      background: 'rgba(239,68,68,0.9)', color: '#fff',
+                      border: 'none', borderRadius: '50%', width: '20px', height: '20px',
+                      cursor: 'pointer', fontSize: '11px', display: 'flex',
+                      alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              <label style={{
+                width: '100px', height: '100px', borderRadius: '8px',
+                border: '2px dashed var(--color-border)', display: 'flex',
+                flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                cursor: uploading ? 'wait' : 'pointer', gap: '4px',
+                color: 'var(--color-text-muted)', fontSize: '12px',
+              }}>
+                {uploading ? <><span className="spinner" /> ...</> : <><span style={{ fontSize: '20px' }}>+</span> Upload</>}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={async (e) => {
+                    const files = e.target.files;
+                    if (!files?.length) return;
+                    setUploading(true);
+                    try {
+                      for (let j = 0; j < files.length; j++) {
+                        const formData = new FormData();
+                        formData.append('file', files[j]);
+                        const token = localStorage.getItem('token');
+                        const res = await fetch(
+                          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/uploads/image`,
+                          { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: formData },
+                        );
+                        if (res.ok) {
+                          const json = await res.json();
+                          const imgUrl = json?.data?.url || json?.url;
+                          if (imgUrl) setImages((prev) => [...prev, imgUrl]);
+                        }
+                      }
+                    } catch { setError('Gagal upload gambar'); }
+                    finally { setUploading(false); e.target.value = ''; }
+                  }}
+                  style={{ display: 'none' }}
+                  disabled={uploading}
+                />
+              </label>
+            </div>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '11px' }}>Maks 5MB per file. JPG, PNG, WebP, GIF</p>
           </div>
         </div>
 
