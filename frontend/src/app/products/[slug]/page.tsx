@@ -195,6 +195,50 @@ export default function ProductDetailPage() {
         <div className="detail-layout">
           {/* ─── LEFT: Product Info ─── */}
           <div>
+            {/* Product Images */}
+            {product.images?.length > 0 && (
+              <div style={{ marginBottom: '24px' }}>
+                <div style={{
+                  width: '100%', height: '320px', borderRadius: '12px',
+                  overflow: 'hidden', marginBottom: '8px',
+                  border: '1px solid var(--color-border)',
+                }}>
+                  <img
+                    src={product.images[0].startsWith('http') ? product.images[0] : `https://tokdig.com${product.images[0]}`}
+                    alt={product.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    id="product-main-image"
+                  />
+                </div>
+                {product.images.length > 1 && (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {product.images.map((img, i) => (
+                      <div
+                        key={i}
+                        onClick={() => {
+                          const mainImg = document.getElementById('product-main-image') as HTMLImageElement;
+                          if (mainImg) mainImg.src = img.startsWith('http') ? img : `https://tokdig.com${img}`;
+                        }}
+                        style={{
+                          width: '64px', height: '64px', borderRadius: '8px',
+                          overflow: 'hidden', cursor: 'pointer',
+                          border: '2px solid var(--color-border)',
+                          transition: 'border-color 0.2s',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--color-primary)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--color-border)')}
+                      >
+                        <img
+                          src={img.startsWith('http') ? img : `https://tokdig.com${img}`}
+                          alt={`${product.name} ${i + 1}`}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <h1 className="detail-title">{product.name}</h1>
               {/* Wishlist button */}

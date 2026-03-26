@@ -171,6 +171,24 @@ export default async function HomePage() {
 
                 return (
                   <Link href={`/products/${product.slug}`} key={product.id || product.slug} className="product-card card card-hover">
+                    {product.images?.[0] ? (
+                      <div style={{ width: '100%', height: '160px', borderRadius: '8px 8px 0 0', overflow: 'hidden' }}>
+                        <img
+                          src={product.images[0].startsWith('http') ? product.images[0] : `https://tokdig.com${product.images[0]}`}
+                          alt={product.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </div>
+                    ) : (
+                      <div style={{
+                        width: '100%', height: '160px', borderRadius: '8px 8px 0 0',
+                        background: 'linear-gradient(135deg, var(--color-primary-dim) 0%, var(--color-bg-card) 100%)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '48px', opacity: 0.6,
+                      }}>
+                        {product.category?.icon || '📦'}
+                      </div>
+                    )}
                     <div className="product-card-top">
                       <span className="product-type-badge">{product.category?.name || product.type}</span>
                       {product.badges?.length > 0 && (
