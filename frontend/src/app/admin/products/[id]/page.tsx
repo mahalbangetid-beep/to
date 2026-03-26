@@ -84,6 +84,18 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
     setError('');
 
     try {
+      // Strip variants to only include DTO-allowed fields
+      const cleanVariants = variants
+        .filter((v) => v.name)
+        .map(({ name: vName, price, originalPrice, durationDays, stock, isRecommended }) => ({
+          name: vName,
+          price,
+          ...(originalPrice != null ? { originalPrice } : {}),
+          ...(durationDays != null ? { durationDays } : {}),
+          ...(stock != null ? { stock } : {}),
+          ...(isRecommended != null ? { isRecommended } : {}),
+        }));
+
       await api.put(`/admin/products/${id}`, {
         name,
         categoryId: categoryId || undefined,
@@ -98,7 +110,7 @@ export default function AdminEditProductPage({ params }: { params: Promise<{ id:
         rules: rules || undefined,
         warrantyInfo: warrantyInfo || undefined,
         images,
-        variants: variants.length > 0 ? variants : undefined,
+        variants: cleanVariants.length > 0 ? cleanVariants : undefined,
       });
       router.push('/admin/products');
     } catch (err: any) {
